@@ -1,4 +1,6 @@
 const { User } = require('../models');
+const {signToken} = require('../utils/auth');
+const {AuthenticationError} = require('apollo-server-express');
 
 
 const resolvers = {
@@ -38,17 +40,21 @@ const resolvers = {
         const token = signToken(user);
         return { token, user };
       },
-      saveBook: async (parent, args,  context) => {
+      saveBook: async (parent, { bookData },  context) => { ///bookdata represents all the arguments from saveBook mutation from typedefs
         if (context.user) {
-          const savedBook = await User.findOneAndUpdate(
-            
+          const user = await User.findOneAndUpdate(
+            {_id: context.user._id}, {$push: {savedBooks: bookData }}, {new: true} ///returns user after u update the book
           )
+          return user
         }
       },
-      removeBook: async (parent, args, context) => {
-        const removedBook = await User.findOneAndDelete(
-          
-        )
+      removeBook: async (parent, { bookData }, context) => {
+        if (context.user) {
+          const user = await User.findOneAndUpdate(
+            {_id: context.user._id}, {$pull: {savedBooks: bookData }}, {new: true}
+          )
+          return user
+        }
       }
     }
   };
